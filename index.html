@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>JANGMAYDON — O‘zbekcha Battle Royale Demo</title>
+<style>
+:root{--cyan:#4df6d2;--gold:#ffd166;--glass:rgba(7,18,28,.76);--line:rgba(125,235,255,.25)}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;overflow:hidden;background:#07131c;color:#effaff;font-family:Inter,Segoe UI,Arial,sans-serif}
+canvas{display:block}#game{position:fixed;inset:0}
+.hud{position:fixed;inset:0;pointer-events:none;text-shadow:0 2px 8px #000}
+.topbar{position:absolute;top:14px;left:50%;transform:translateX(-50%);display:flex;gap:8px;align-items:center}
+.pill{background:var(--glass);border:1px solid var(--line);border-radius:12px;padding:9px 13px;backdrop-filter:blur(10px);font-size:12px;letter-spacing:.08em}
+.pill strong{color:var(--cyan);font-size:16px;margin-left:6px}
+.brand{position:absolute;left:18px;top:16px;font-weight:900;font-style:italic;letter-spacing:.12em;font-size:18px}.brand span{color:var(--cyan)}
+#miniMap{position:absolute;right:18px;top:16px;width:148px;height:148px;border:1px solid var(--line);border-radius:16px;background:rgba(4,15,23,.78);box-shadow:0 10px 30px #0007}
+.bottomleft{position:absolute;left:18px;bottom:18px;width:240px}
+.status{background:var(--glass);border:1px solid var(--line);border-radius:14px;padding:12px;margin-top:8px}
+.row{display:flex;justify-content:space-between;font-size:11px;letter-spacing:.1em;margin-bottom:7px;color:#c9dbe3}
+.bar{height:8px;background:#172c38;border-radius:10px;overflow:hidden}.fill{height:100%;width:100%;transition:width .15s}.health{background:linear-gradient(90deg,#42f59b,#b8ff70)}.boost{background:linear-gradient(90deg,#00c8ff,#7af5ff)}
+#feed{position:absolute;left:18px;top:76px;font-size:12px;line-height:1.7;color:#d4e7ed;max-width:250px}
+#crosshair{position:absolute;left:50%;top:50%;width:24px;height:24px;transform:translate(-50%,-50%)}
+#crosshair:before,#crosshair:after{content:"";position:absolute;background:#eaffff;box-shadow:0 0 8px #4df6d2}
+#crosshair:before{width:2px;height:22px;left:11px;top:1px}#crosshair:after{height:2px;width:22px;left:1px;top:11px}
+#hint{position:absolute;bottom:25px;left:50%;transform:translateX(-50%);padding:10px 14px;border-radius:12px;background:#06121cc9;border:1px solid var(--line);font-size:12px;color:#d7f9ff;white-space:nowrap}
+#startScreen,#endScreen{position:fixed;inset:0;z-index:10;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at 50% 35%,#173f4b99,#030910f2 70%);padding:20px}
+.panel{width:min(650px,96vw);border:1px solid #5cebd455;background:linear-gradient(135deg,#0c202beF,#071018f5);border-radius:26px;padding:clamp(22px,5vw,42px);box-shadow:0 25px 100px #0009;position:relative;overflow:hidden}
+.panel:before{content:"";position:absolute;inset:0;background:linear-gradient(110deg,transparent 30%,#4df6d20a 50%,transparent 70%);pointer-events:none}
+.kicker{color:var(--cyan);font-size:11px;letter-spacing:.28em;font-weight:800}.title{font-size:clamp(42px,9vw,76px);line-height:.94;font-weight:1000;letter-spacing:-.06em;margin:13px 0}.title em{font-style:normal;color:var(--cyan)}
+.sub{color:#afc4ce;line-height:1.65;font-size:14px;max-width:510px}
+.features{display:flex;gap:8px;flex-wrap:wrap;margin:20px 0}.tag{border:1px solid #b9faff25;border-radius:30px;padding:8px 11px;color:#cce5eb;font-size:11px;background:#ffffff06}
+.btn{border:0;border-radius:12px;background:linear-gradient(100deg,#4df6d2,#a5ffdc);color:#04151b;font-weight:900;padding:15px 22px;cursor:pointer;letter-spacing:.08em;box-shadow:0 8px 28px #4df6d222}
+.btn:hover{filter:brightness(1.08);transform:translateY(-1px)}.btn.secondary{background:#142b37;color:#e5fbff;border:1px solid var(--line);box-shadow:none}
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:22px}.fine{font-size:11px;color:#75919e;line-height:1.6;margin-top:16px}
+#endScreen{display:none}.result{font-size:38px;font-weight:1000;margin:12px 0;color:var(--cyan)}
+#toast{position:fixed;top:22%;left:50%;transform:translateX(-50%);z-index:6;background:#06151fe8;border:1px solid var(--line);padding:12px 18px;border-radius:12px;opacity:0;transition:opacity .25s;pointer-events:none}
+#mobileControls{display:none;position:fixed;inset:0;pointer-events:none;z-index:4}
+.joy{position:absolute;left:24px;bottom:30px;width:118px;height:118px;border-radius:50%;background:#d8ffff15;border:1px solid #d8ffff4d;pointer-events:auto;touch-action:none}
+.joy:after{content:"";position:absolute;width:44px;height:44px;border-radius:50%;background:#4df6d24f;border:1px solid #aaffee;left:36px;top:36px}
+.mbtn{position:absolute;pointer-events:auto;touch-action:none;border-radius:50%;width:62px;height:62px;border:1px solid #b4ffff70;background:#0b2738cc;color:#eaffff;font-weight:900}
+#fireBtn{right:25px;bottom:48px;width:78px;height:78px;background:#b13b35d9}#jumpBtn{right:112px;bottom:42px}#runBtn{right:114px;bottom:116px}
+@media(max-width:700px){.brand{font-size:13px;left:10px;top:10px}.topbar{top:62px;gap:4px}.pill{padding:7px 8px;font-size:10px}.pill strong{font-size:13px}#miniMap{width:104px;height:104px;right:10px;top:10px}.bottomleft{left:10px;bottom:10px;width:170px}.status{padding:8px;margin-top:5px}.row{font-size:9px}#feed{top:120px;left:10px;font-size:10px;max-width:150px}#hint{display:none}.panel{padding:25px}.sub{font-size:12px}}
+</style>
+</head>
+<body>
+<div id="game"></div>
+<div class="hud" id="hud" style="display:none">
+  <div class="brand">JANG<span>MAYDON</span> <small style="font-size:9px;color:#8faab5">/ DEMO 0.1</small></div>
+  <div class="topbar">
+    <div class="pill">TIRIK QOLGAN <strong id="alive">12</strong></div>
+    <div class="pill">ZONA <strong id="zoneTime">02:00</strong></div>
+    <div class="pill">KILL <strong id="kills">0</strong></div>
+  </div>
+  <canvas id="miniMap" width="180" height="180"></canvas>
+  <div id="feed"></div><div id="crosshair"></div>
+  <div class="bottomleft">
+    <div class="status"><div class="row"><span>JON</span><span id="hpText">100 / 100</span></div><div class="bar"><div id="hpBar" class="fill health"></div></div></div>
+    <div class="status"><div class="row"><span>ENERGIYA</span><span id="stText">100%</span></div><div class="bar"><div id="stBar" class="fill boost"></div></div></div>
+  </div>
+  <div id="hint">WASD — harakat · SHIFT — yugurish · SPACE — sakrash · Sichqoncha — nishon/otish · E — loot</div>
+</div>
+<div id="toast"></div>
+<div id="mobileControls">
+ <div class="joy" id="joy"></div>
+ <button class="mbtn" id="fireBtn">OTISH</button><button class="mbtn" id="jumpBtn">SAKRASH</button><button class="mbtn" id="runBtn">YUGURISH</button>
+</div>
+<div id="startScreen">
+ <div class="panel">
+  <div class="kicker">O‘ZBEKCHA BATTLE ROYALE • DO‘STLAR BILAN DEMO</div>
+  <div class="title">JANG<em>MAYDON</em></div>
+  <div class="sub">O‘zbekiston ruhidagi zamonaviy jang maydoni. Hududni o‘rganing, jihoz yig‘ing, raqiblardan omon qoling va xavfsiz zonaga yetib boring. Bu — brauzerda darhol o‘ynaladigan sinov prototipi.</div>
+  <div class="features"><span class="tag">✦ 3D arena</span><span class="tag">✦ Bot raqiblar</span><span class="tag">✦ Loot va qurol</span><span class="tag">✦ Kichrayuvchi zona</span><span class="tag">✦ O‘zbekcha HUD</span></div>
+  <div class="actions"><button class="btn" id="startBtn">JANGNI BOSHLASH ↗</button><button class="btn secondary" id="howBtn">BOSHQARUV</button></div>
+  <div class="fine">Demo 0.1 · Bir qurilmada ishlaydigan prototip. Do‘stlar bilan internet orqali multiplayer hozircha yo‘q; buning uchun server va tarmoq kodi kerak. Kompyuterda Chrome/Edge tavsiya qilinadi.</div>
+ </div>
+</div>
+<div id="endScreen"><div class="panel"><div class="kicker">JANG YAKUNI</div><div class="title" id="endTitle">G‘ALABA</div><div class="result" id="endStats">0 KILL</div><div class="sub" id="endText">Maydon sizniki.</div><div class="actions"><button class="btn" id="againBtn">QAYTA O‘YNASH ↻</button><button class="btn secondary" id="menuBtn">MENYU</button></div></div></div>
+<script type="module" src="./src/game.js"></script>
+</body>
+</html>
